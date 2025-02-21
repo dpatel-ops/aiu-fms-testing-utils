@@ -38,7 +38,7 @@ def reset_compiler():
 @pytest.mark.parametrize("model_path,batch_size,seq_length,max_new_tokens", common_shapes)
 def test_common_shapes(model_path, batch_size, seq_length, max_new_tokens):
     use_micro_models = os.environ.get("USE_MICRO_MODELS", False)
-    # prepare the AIU model
+    # prepare the AIU model.
     # model = get_model(
     #     "hf_pretrained",
     #     model_path=model_path,
