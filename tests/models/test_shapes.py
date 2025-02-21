@@ -15,6 +15,8 @@ GRANITE_7B_BASE = f"{model_dir}/granite-7b-base"
 GRANITE_8B_CODE_BASE = f"{model_dir}/granite-8b-code-base"
 GRANITE_3_8B_CODE_BASE = f"{model_dir}/granite-3-8b-base"
 
+
+
 # pass custom model path list for eg: EXPORT FMS_TESTING_COMMON_MODEL_PATHS="/tmp/models/granite-3-8b-base,/tmp/models/granite-7b-base"
 if os.environ.get("FMS_TESTING_COMMON_MODEL_PATHS") == None or os.environ.get("FMS_TESTING_COMMON_MODEL_PATHS") == "":
     common_model_paths = [LLAMA_194M, GRANITE_7B_BASE, GRANITE_8B_CODE_BASE, GRANITE_3_8B_CODE_BASE]
@@ -35,25 +37,48 @@ def reset_compiler():
 
 @pytest.mark.parametrize("model_path,batch_size,seq_length,max_new_tokens", common_shapes)
 def test_common_shapes(model_path, batch_size, seq_length, max_new_tokens):
+    use_micro_models = os.environ.get("USE_MICRO_MODELS", False)
     # prepare the AIU model
+    # model = get_model(
+    #     "hf_pretrained",
+    #     model_path=model_path,
+    #     device_type="cpu",
+    #     fused_weights=False,
+    # )
+
+    # model.eval()
+    # torch.set_grad_enabled(False)
+    # model.compile(backend="sendnn_decoder")
+
+    # # prepare the cpu model
+    # validation_model = get_model(
+    #     "hf_pretrained",
+    #     model_path=model_path,
+    #     device_type="cpu",
+    # )
+    if use_micro_models:
+        get_model_kwargs = {"architecture": "hf_configured", "nlayers": 3}
+    else:
+        get_model_kwargs  = {"architecture": "hf_pretrained"}
+
     model = get_model(
-        "hf_pretrained",
-        model_path=model_path,
-        device_type="cpu",
+        model_path="model_path",
         fused_weights=False,
+        device_type="cpu",
+        **get_model_kwargs
     )
 
-    model.eval()
-    torch.set_grad_enabled(False)
     model.compile(backend="sendnn_decoder")
 
-    # prepare the cpu model
     validation_model = get_model(
-        "hf_pretrained",
-        model_path=model_path,
+        model_path="model_path",
+        fused_weights=False,
         device_type="cpu",
+        **get_model_kwargs
     )
 
+    if use_micro_models:
+        validation_model.load_state_dict(model.state_dict())
     # prepare input_ids
     prompt_list = []
     for i in range(batch_size):
