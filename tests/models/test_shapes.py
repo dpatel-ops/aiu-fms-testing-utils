@@ -60,7 +60,8 @@ def test_common_shapes(model_path, batch_size, seq_length, max_new_tokens):
         get_model_kwargs = {"architecture": "hf_configured", "nlayers": 3}
     else:
         get_model_kwargs  = {"architecture": "hf_pretrained"}
-
+    if model.config.max_expected_seq_len < max_new_tokens + seq_length:
+        pytest.skip("Skipping this test as max tokens + sequence length is greater than max model sequence length!")
     model = get_model(
         model_path="model_path",
         fused_weights=False,
